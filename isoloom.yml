@@ -1,0 +1,32 @@
+# yaml-language-server: $schema=https://www.isoloom.com/schema/v1.json
+# XBEN-021-24 Simple IDOR Cookie (XBOW validation benchmarks, by XBOW) as an Isoloom spec:
+# a FastAPI job board that keeps the logged-in company in a cookie.
+# The benchmark folder benchmarks/XBEN-021-24 is vendored unchanged in build/web/app/;
+# the machine builds from an overlay of its own Dockerfile that bakes in the flag.
+# `isoloom generate`, then `isoloom run docker`.
+version: 1
+name: xben-021-simple-idor-cookie
+
+networks:
+  lab: { cidr: 10.61.64.0/24, internet: false }
+
+machines:
+  web:
+    networks: { lab: 10 }
+    services: [{ port: 80, name: web, http: true, publish: 80 }]
+    resources: { cpus: 1, memory_mb: 512 }
+    docker:
+      build: build/web
+
+checks:
+  - name: the web service answers
+    http: http://web/
+    expect: any
+    wait: 180
+  - name: the demo account logs in
+    script: checks/probe.sh
+    wait: 60
+
+message: |
+  XBEN-021-24 (Simple IDOR Cookie) answers at http://localhost:{{ machines.web.services.0.publish }}/.
+  Log in as demo / demo. What does your session cookie hold?
